@@ -1,0 +1,7 @@
+<layout>
+    <adminhtml_system_config_edit>
+        <reference name="content">
+            <block type="giftdcards/jsinit" name="giftdcards_jsinit"  template="giftdcards/jsinit.phtml"></block>
+        </reference>
+    </adminhtml_system_config_edit>
+</layout>
