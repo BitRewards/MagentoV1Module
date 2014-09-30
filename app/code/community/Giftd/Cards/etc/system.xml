@@ -1,0 +1,313 @@
+<?xml version="1.0"?>
+<config>
+    <sections>
+        <giftd_cards translate="label" module="giftd_cards">
+            <label>Giftd Cards</label>
+            <tab>sales</tab>
+            <frontend_type>text</frontend_type>
+            <sort_order>991</sort_order>
+            <show_in_default>1</show_in_default>
+            <show_in_website>1</show_in_website>
+            <show_in_store>1</show_in_store>
+            <groups>
+                <api_settings translate="label">
+                    <label>Giftd API Settings</label>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>1</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <comment>
+                        <![CDATA[
+                            Access for API (<a id="SIGN_IN" href="https://partner.giftd.ru/site/login?popup=1" onclick="SignIn(this);return false;">Get API access settings</a>)
+                            <script type="text/javascript">
+                                var popup = null;
+                                function openWindow(options) {
+                                    var
+                                        screenX = typeof window.screenX != 'undefined' ? window.screenX : window.screenLeft,
+                                        screenY = typeof window.screenY != 'undefined' ? window.screenY : window.screenTop,
+                                        outerWidth = typeof window.outerWidth != 'undefined' ? window.outerWidth : document.body.clientWidth,
+                                        outerHeight = typeof window.outerHeight != 'undefined' ? window.outerHeight : (document.body.clientHeight - 22),
+                                        width = options.width,
+                                        height = options.height,
+                                        left = parseInt(screenX + ((outerWidth - width) / 2), 10),
+                                        top = parseInt(screenY + ((outerHeight - height) / 2.5), 10),
+                                        features = (
+                                            'width=' + width +
+                                                ',height=' + height +
+                                                ',left=' + left +
+                                                ',top=' + top
+                                            );
+                                    popup = window.open(options.url, 'giftd_auth_' + new Date().getTime(), features);
+                                }
+
+                                function update_api_key(user_id, api_key)
+                                {
+                                    giftd_cards_api_settings_api_key.value = api_key;
+                                    giftd_cards_api_settings_user_id.value = user_id;
+                                    configForm.submit();
+                                }
+
+                                function SignIn(a){
+                                    openWindow({
+                                        width: 520,
+                                        height: 453,
+                                        url: a.href
+                                    });
+
+                                    AwaitResponse();
+                                }
+
+                                function AwaitResponse() {
+                                    if (window.addEventListener) {  // all browsers except IE before version 9
+                                        window.addEventListener ("message", OnMessage, false);
+                                    }
+                                    else {
+                                        if (window.attachEvent) {   // IE before version 9
+                                            window.attachEvent("onmessage", OnMessage);
+                                        }
+                                    }
+                                }
+
+                                function OnMessage (message) {
+                                    var rawMessage = message.data || message.originalEvent.data;
+                                    console.log(rawMessage);
+                                    if (typeof(rawMessage) == 'string' && rawMessage.indexOf("giftd/auth") === 0) {
+                                        var message = JSON.parse(rawMessage.split("~", 2)[1]);
+                                        console.log(message);
+                                        switch (message.type) {
+                                            case 'error':
+                                                alert(message.data);
+                                                break;
+                                            case 'data':
+                                                update_api_key(message.data.user_id, message.data.api_key);
+                                                break;
+                                            default:
+                                                break;
+                                        }
+                                        popup.close();
+                                    }
+                                }
+
+                                function UpdateComponentSettings()
+                                {
+                                    if($('input[name=COMPONENT_IS_ACTIVE]').prop('checked'))
+                                        $('tr.component_field').show();
+                                    else
+                                        $('tr.component_field').hide();
+                                }
+
+                                function UpdateComponentTemplateSettings()
+                                {
+                                    var items = $('tr.template_field');
+                                    if($('select[name=COMPONENT_TEMPLATE]').val() != 'PHP')
+                                        $('tr.template_field').show();
+                                    else
+                                        $('tr.template_field').hide();
+                                }
+
+                                function UpdatePanelSettings()
+                                {
+                                    if($('input[name=JS_PANEL_IS_ACTIVE').prop('checked')) {
+                                        $('tr.panel_field').show();
+                                        $('tr.panel_field').find('input').prop('disabled', false);
+                                    } else {
+                                        $('tr.panel_field').hide();
+                                        $('tr.panel_field').find('input').prop('disabled', true);
+                                    }
+                                }
+
+                                $(function(){
+
+                                    $('input[name=COMPONENT_IS_ACTIVE').click(UpdateComponentSettings);
+                                    $('select[name=COMPONENT_TEMPLATE]').change(UpdateComponentTemplateSettings);
+                                    $('input[name=JS_PANEL_IS_ACTIVE').click(UpdatePanelSettings);
+
+                                    UpdateComponentTemplateSettings();
+                                    UpdatePanelSettings();
+                                    UpdateComponentSettings();
+                                });
+
+                            </script>
+                        ]]>
+                    </comment>
+                    <fields>
+                        <api_key translate="label comment">
+                            <label>API Key</label>
+                            <comment></comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>1</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </api_key>
+                        <user_id translate="label comment">
+                            <label>User ID</label>
+                            <comment></comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>2</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </user_id>
+                        <partner_token translate="label comment">
+                            <label>Partner Token</label>
+                            <comment></comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>3</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </partner_token>
+                        <partner_token_prefix translate="label comment">
+                            <label>Partner Token Prefix</label>
+                            <comment></comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>4</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </partner_token_prefix>
+                    </fields>
+                </api_settings>
+                <panel_settings translate="label">
+                    <label>Giftd Panel Settings</label>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>2</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <comment><![CDATA[]]></comment>
+                    <fields>
+                        <panel_is_active translate="label comment">
+                            <label>Show panel</label>
+                            <comment></comment>
+                            <frontend_type>checkbox</frontend_type>
+                            <sort_order>1</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </panel_is_active>
+                        <tab_position translate="label comment">
+                            <label>Panel position</label>
+                            <comment><![CDATA[<img src="https://partner.giftd.ru/img/embedded_tab_screenshot.png" style="width: 267px;margin-top: 5px;">]]></comment>
+                            <frontend_type>select</frontend_type>
+                            <source_model>giftd_cards/system_config_source_tabposition</source_model>
+                            <sort_order>2</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </tab_position>
+                        <tab_panel_bgcolor translate="label comment">
+                            <label>Panel background color</label>
+                            <comment></comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>3</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </tab_panel_bgcolor>
+                        <tab_panel_bgimage translate="label comment">
+                            <label>Panel background image</label>
+                            <comment></comment>
+                            <frontend_type>image</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_image</backend_model>
+                            <upload_dir config="system/filesystem/media" scope_info="1">giftd_panel</upload_dir>
+                            <base_url type="media" scope_info="1">giftd_panel</base_url>
+                            <sort_order>4</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </tab_panel_bgimage>
+
+                        <tab_panel_decor_top translate="label comment">
+                            <label>Panel decor top</label>
+                            <comment></comment>
+                            <frontend_type>image</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_image</backend_model>
+                            <upload_dir config="system/filesystem/media" scope_info="1">giftd_panel</upload_dir>
+                            <base_url type="media" scope_info="1">giftd_panel</base_url>
+                            <sort_order>5</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </tab_panel_decor_top>
+                        <tab_panel_decor_bottom translate="label comment">
+                            <label>Panel decor bottom</label>
+                            <comment></comment>
+                            <frontend_type>image</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_image</backend_model>
+                            <upload_dir config="system/filesystem/media" scope_info="1">giftd_panel</upload_dir>
+                            <base_url type="media" scope_info="1">giftd_panel</base_url>
+                            <sort_order>6</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </tab_panel_decor_bottom>
+                        <panel_text_color translate="label comment">
+                            <label>Panel text color</label>
+                            <comment></comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>7</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </panel_text_color>
+                        <panel_description_color translate="label comment">
+                            <label>Panel description color</label>
+                            <comment></comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>8</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </panel_description_color>
+                        <panel_description_icon translate="label comment">
+                            <label>Panel description icon</label>
+                            <comment></comment>
+                            <frontend_type>image</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_image</backend_model>
+                            <upload_dir config="system/filesystem/media" scope_info="1">giftd_panel</upload_dir>
+                            <base_url type="media" scope_info="1">giftd_panel</base_url>
+                            <sort_order>9</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </panel_description_icon>
+
+                        <content_bgimage translate="label comment">
+                            <label>Panel content background image</label>
+                            <comment></comment>
+                            <frontend_type>image</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_image</backend_model>
+                            <upload_dir config="system/filesystem/media" scope_info="1">giftd_panel</upload_dir>
+                            <base_url type="media" scope_info="1">giftd_panel</base_url>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </content_bgimage>
+                        <content_color translate="label comment">
+                            <label>Panel content background color</label>
+                            <comment></comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>11</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </content_color>
+                        <content_title_color translate="label comment">
+                            <label>Panel content title color</label>
+                            <comment></comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>12</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </content_title_color>
+                    </fields>
+                </panel_settings>
+            </groups>
+        </giftd_cards>
+    </sections>
+</config>
