@@ -1,8 +1,0 @@
-<config>
-    <modules>
-        <Giftd_GiftdCards>
-            <active>true</active>
-            <codePool>community</codePool>
-        </Giftd_GiftdCards>
-    </modules>
-</config>
