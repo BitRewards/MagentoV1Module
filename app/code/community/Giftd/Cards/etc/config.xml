@@ -81,7 +81,7 @@
                             <children>
                                 <config>
                                     <children>
-                                        <giftd_cards translate="title" module="cards">
+                                        <giftd_cards translate="title" module="giftd_cards">
                                             <title>Giftd Cards Settings</title>
                                         </giftd_cards>
                                     </children>
