@@ -25,7 +25,7 @@ class Giftd_Cards_Model_Observer
         //kk: do check if api_key or user_id values has changed
         if(self::init())
         {
-            $response = $this->client->query('bitrix/getData');
+            $response = $this->client->query('partner/get');
             if($response['type'] == 'data')
             {
                 $config = new Mage_Core_Model_Config();
@@ -42,7 +42,7 @@ class Giftd_Cards_Model_Observer
         if($client = self::init())
         {
             $event = $observer->getEvent();
-            $order = $event->getPayment()->getOrder();
+            $order = $event->getOrder();
             if ($coupon_code = $order->getCouponCode()) {
                 if($card = self::getGiftdCard($coupon_code))
                 {

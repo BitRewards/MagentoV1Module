@@ -62,8 +62,19 @@
                     </giftd_cards>
                 </observers>
             </controller_action_predispatch_checkout_cart_index>
+
         </events>
     </global>
+
+    <frontend>
+        <layout>
+            <updates>
+                <giftd_cards module="giftd_cards">
+                    <file>giftd_panel.xml</file>
+                </giftd_cards>
+            </updates>
+        </layout>
+    </frontend>
 
     <adminhtml>
         <layout>
