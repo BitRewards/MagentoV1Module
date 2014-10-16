@@ -29,8 +29,8 @@ class Giftd_Cards_Model_Observer
             if($response['type'] == 'data')
             {
                 $config = new Mage_Core_Model_Config();
-                $config->saveConfig('giftd_cards/api_settings/partner_token', $response['data']['partner_code'], 'default', 0);
-                $config->saveConfig('giftd_cards/api_settings/partner_token_prefix', $response['data']['partner_token_prefix'], 'default', 0);
+                $config->saveConfig('giftd_cards/api_settings/partner_token', $response['data']['code'], 'default', 0);
+                $config->saveConfig('giftd_cards/api_settings/partner_token_prefix', $response['data']['token_prefix'], 'default', 0);
 
             }
         }
