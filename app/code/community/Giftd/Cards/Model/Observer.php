@@ -34,7 +34,6 @@ class Giftd_Cards_Model_Observer
 
             }
         }
-
     }
 
     public function showMinimumSubtotlaError($limit)
@@ -56,7 +55,6 @@ class Giftd_Cards_Model_Observer
                 }
             }
         }
-
     }
 
 
@@ -86,7 +84,7 @@ class Giftd_Cards_Model_Observer
                 $coupon_value = $card->amount_available;
                 if ($coupon_value > $subTotal)
                 {
-                    showMinimumSubtotlaError($coupon_value);
+                    $this->showMinimumSubtotlaError($coupon_value);
                 }
                 self::generateRule("Giftd card ".$card->title.' ('.$card->owner_name.')', $coupon_code, $coupon_value);
             }
