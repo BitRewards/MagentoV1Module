@@ -37,16 +37,22 @@ class Giftd_Cards_Model_Observer
 
     }
 
-    public  function checkoutCoupon(Varien_Event_Observer $observer)
+    public function showMinimumSubtotlaError($limit)
+    {
+        Mage::getSingleton('checkout/session')->addError('To apply this coupon the subtotal should be at least '.$limit);
+    }
+
+    public function checkoutCoupon(Varien_Event_Observer $observer)
     {
         if($client = self::init())
         {
-            $event = $observer->getEvent();
-            $order = $event->getOrder();
-            if ($coupon_code = $order->getCouponCode()) {
+            $quote = Mage::helper('checkout/cart')->getQuote();
+            if ($coupon_code = $quote->getCouponCode())
+            {
                 if($card = self::getGiftdCard($coupon_code))
                 {
-                    $client->charge($coupon_code, $card->amount_available, $order->getGrandTotal(), $order->getCustomerId().'_'.$order->getGrandTotal());
+                    $subtotal = $quote->getSubtotal();
+                    $client->charge($coupon_code, $card->amount_available, $subtotal, Mage::getSingleton('customer/session')->getCustomerId().'_'.$subtotal);
                 }
             }
         }
@@ -56,16 +62,33 @@ class Giftd_Cards_Model_Observer
 
     public function processCoupon(Varien_Event_Observer $observer)
     {
-        if($_REQUEST['remove'] != 0)
+        if($_REQUEST['remove'] == 1)
             return;
 
         $coupon_code = $_REQUEST['coupon_code'];
+        $subTotal = Mage::helper('checkout/cart')->getQuote()->getSubtotal();
+
+        $existedCoupon = Mage::getModel('salesrule/coupon')->load($coupon_code, 'code');
+        if($existedCoupon->getRuleId())
+        {
+            $rule = Mage::getModel('salesrule/rule')->load($existedCoupon->getRuleId());
+            if(strpos($rule->getData('name'), 'Giftd') === 0 && $rule->getData('discount_amount') > $subTotal)
+            {
+                $this->showMinimumSubtotlaError(number_format($rule->getData('discount_amount'), 2));
+            }
+            return;
+        }
+
         if(self::init())
         {
             if($card = self::getGiftdCard($coupon_code))
             {
                 $coupon_value = $card->amount_available;
-                self::generateRule("Giftd_card",$coupon_code,$coupon_value);
+                if ($coupon_value > $subTotal)
+                {
+                    showMinimumSubtotlaError($coupon_value);
+                }
+                self::generateRule("Giftd card ".$card->title.' ('.$card->owner_name.')', $coupon_code, $coupon_value);
             }
         }
     }
@@ -73,7 +96,7 @@ class Giftd_Cards_Model_Observer
     public function getGiftdCard($the_coupon_code)
     {
         $prefix = Mage::getStoreConfig('giftd_cards/api_settings/partner_token_prefix',Mage::app()->getStore());
-        if($this->client && strlen($the_coupon_code) > 0 && strstr($the_coupon_code, $prefix))
+        if($this->client && strlen($the_coupon_code) > 0 && strpos($the_coupon_code, $prefix) === 0)
         {
             $card = $this->client->checkByToken($the_coupon_code);
             if($card && $card->token_status == Giftd_Card::TOKEN_STATUS_OK)
@@ -87,39 +110,59 @@ class Giftd_Cards_Model_Observer
 
     public function generateRule($name = null, $coupon_code = null, $discount = 0)
     {
-      if ($name != null && $coupon_code != null)
-      {
-        $rule = Mage::getModel('salesrule/rule');
-        $customer_groups = array(0, 1, 2, 3);
-        $rule->setName($name)
-          ->setDescription($name)
-          ->setFromDate('')
-          ->setCouponType(2)
-          ->setCouponCode($coupon_code)
-          ->setUsesPerCustomer(1)
-          ->setUsesPerCoupon(1)
-          ->setCustomerGroupIds($customer_groups) //an array of customer grou pids
-          ->setIsActive(1)
-          ->setConditionsSerialized('')
-          ->setActionsSerialized('')
-          ->setStopRulesProcessing(0)
-          ->setIsAdvanced(1)
-          ->setProductIds('')
-          ->setSortOrder(0)
-          ->setSimpleAction('cart_fixed')
-          ->setDiscountAmount($discount)
-          ->setDiscountQty(null)
-          ->setDiscountStep(0)
-          ->setSimpleFreeShipping('0')
-          ->setApplyToShipping('0')
-          ->setIsRss(0)
-          ->setWebsiteIds(array(1));
+        if ($name != null && $coupon_code != null)
+        {
+            $data = array(
+              'product_ids' => null,
+              'name' => sprintf($name, Mage::getSingleton('customer/session')->getCustomerId()),
+              'description' => null,
+              'is_active' => 1,
+              'website_ids' => array(1),
+              'customer_group_ids' => array(0,1,2,4,5),
+              'coupon_type' => 2,
+              'coupon_code' => $coupon_code,
+              'uses_per_coupon' => 1,
+              'uses_per_customer' => 1,
+              'from_date' => null,
+              'to_date' => null,
+              'sort_order' => null,
+              'is_rss' => 0,
+              'conditions' => array(
+                  "1" => array(
+                      "type" => "salesrule/rule_condition_combine",
+                      "aggregator" => "all",
+                      "value" => "1",
+                      "new_child" => null
+                  ),
+                  "1--1" => array(
+                      "type" => "salesrule/rule_condition_address",
+                      "attribute" => "base_subtotal",
+                      "operator" => ">=",
+                      "value" => $discount
+                  )
+              ),
+              'simple_action' => 'cart_fixed',
+              'discount_amount' => $discount,
+              'discount_qty' => 0,
+              'discount_step' => null,
+              'apply_to_shipping' => 0,
+              'simple_free_shipping' => 0,
+              'stop_rules_processing' => 0,
+              'store_labels' => array($name)
+            );
 
-        try {
-          $rule->save();
-         } catch (Exception $e) {
-        Mage::log($e->getMessage());
-         }
-      }
+            $model = Mage::getModel('salesrule/rule');
+            $validateResult = $model->validateData(new Varien_Object($data));
+
+            if ($validateResult == true)
+            {
+                try {
+                    $model->loadPost($data);
+                    $model->save();
+                } catch (Exception $e) {
+                    Mage::log($e->getMessage());
+                }
+            }
+        }
     }
 }
