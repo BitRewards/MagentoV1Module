@@ -6,8 +6,11 @@ class Giftd_Cards_Model_Observer
 {
     protected $client = false;
 
-    public function init()
+    public function init($force=false)
     {
+        if($this->client && !$force)
+            return true;
+
         $api_key = Mage::getStoreConfig('giftd_cards/api_settings/api_key',Mage::app()->getStore());
         $user_id = Mage::getStoreConfig('giftd_cards/api_settings/user_id',Mage::app()->getStore());
 
@@ -43,7 +46,7 @@ class Giftd_Cards_Model_Observer
 
     public function checkoutCoupon(Varien_Event_Observer $observer)
     {
-        if($client = self::init())
+        if(self::init())
         {
             $quote = Mage::helper('checkout/cart')->getQuote();
             if ($coupon_code = $quote->getCouponCode())
@@ -51,7 +54,21 @@ class Giftd_Cards_Model_Observer
                 if($card = self::getGiftdCard($coupon_code))
                 {
                     $subtotal = $quote->getSubtotal();
-                    $client->charge($coupon_code, $card->amount_available, $subtotal, Mage::getSingleton('customer/session')->getCustomerId().'_'.$subtotal);
+                    $order_id = $observer->getEvent()->getOrder()->getId();
+                    $visitor = Mage::getSingleton('core/session')->getVisitorData();
+
+                    try
+                    {
+                        $this->client->charge($coupon_code, $card->amount_available, $subtotal, $visitor['visitor_id'].'_'.$visitor['quote_id'].'_'.$order_id);
+                        Mage::log('coupon charged - code:'.$coupon_code.' amount:'.$card->amount_available.' subtotal:'.$subtotal.' id:'.$visitor['visitor_id'].'_'.$visitor['quote_id'].'_'.$order_id);
+
+                    }
+                    catch(Exception $e)
+                    {
+                        //KK: how should we handle such situations?
+                        Mage::logException($e);
+                    }
+
                 }
             }
         }
@@ -67,12 +84,16 @@ class Giftd_Cards_Model_Observer
         $subTotal = Mage::helper('checkout/cart')->getQuote()->getSubtotal();
 
         $existedCoupon = Mage::getModel('salesrule/coupon')->load($coupon_code, 'code');
-        if($existedCoupon->getRuleId())
+        $rule = $existedCoupon->getRuleId() ? Mage::getModel('salesrule/rule')->load($existedCoupon->getRuleId()) : false;
+        if($rule)
         {
-            $rule = Mage::getModel('salesrule/rule')->load($existedCoupon->getRuleId());
-            if(strpos($rule->getData('name'), 'Giftd') === 0 && $rule->getData('discount_amount') > $subTotal)
+            if(strpos($rule->getData('name'), 'Giftd') === 0 && self::init())
             {
-                $this->showMinimumSubtotlaError(number_format($rule->getData('discount_amount'), 2));
+                if($card = self::getGiftdCard($coupon_code))
+                {
+                    if($card->min_amount_total > $subTotal)
+                        $this->showMinimumSubtotlaError($card->min_amount_total);
+                }
             }
             return;
         }
@@ -82,11 +103,11 @@ class Giftd_Cards_Model_Observer
             if($card = self::getGiftdCard($coupon_code))
             {
                 $coupon_value = $card->amount_available;
-                if ($coupon_value > $subTotal)
+                if ($card->min_amount_total > $subTotal)
                 {
-                    $this->showMinimumSubtotlaError($coupon_value);
+                    $this->showMinimumSubtotlaError($card->min_amount_total);
                 }
-                self::generateRule("Giftd card ".$card->title.' ('.$card->owner_name.')', $coupon_code, $coupon_value);
+                self::generateRule("Giftd card ".$card->card_title.' ('.$card->owner_name.')', $coupon_code, $coupon_value, $card->min_amount_total);
             }
         }
     }
@@ -106,13 +127,13 @@ class Giftd_Cards_Model_Observer
         return false;
     }
 
-    public function generateRule($name = null, $coupon_code = null, $discount = 0)
+    public function generateRule($name, $coupon_code, $discount, $min_amount)
     {
         if ($name != null && $coupon_code != null)
         {
             $data = array(
               'product_ids' => null,
-              'name' => sprintf($name, Mage::getSingleton('customer/session')->getCustomerId()),
+              'name' => $name,
               'description' => null,
               'is_active' => 1,
               'website_ids' => array(1),
@@ -136,7 +157,7 @@ class Giftd_Cards_Model_Observer
                       "type" => "salesrule/rule_condition_address",
                       "attribute" => "base_subtotal",
                       "operator" => ">=",
-                      "value" => $discount
+                      "value" => $min_amount
                   )
               ),
               'simple_action' => 'cart_fixed',
