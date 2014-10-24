@@ -1,12 +1,10 @@
 # Giftd extension for Magento #
-================
 
 ## Requirements ##
 
 - PHP version >= 5.2.0
 
 - php-cURL extension
-
 ## Installation ##
 
 Full installation manual is available here:
