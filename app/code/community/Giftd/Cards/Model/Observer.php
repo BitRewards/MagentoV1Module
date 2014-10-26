@@ -78,9 +78,23 @@ class Giftd_Cards_Model_Observer
         }
     }
 
-    public function showMinimumSubtotlaError($limit)
+    public function showMinimumSubtotalError($limit)
     {
-        Mage::getSingleton('checkout/session')->addError('To apply this coupon the subtotal should be at least '.$limit);
+
+        switch (Mage::app()->getLocale()->getLocaleCode()) {
+            case 'ru_RU':
+                $message = "Для использования этой подарочной карты общая сумма должна быть не менее %s";
+                break;
+            case 'de_DE':
+                $message = "Um diese Geschenkkarte nutzen die Zwischensumme sollte mindestens %s";
+                break;
+            default:
+                $message = "To use this gift card the subtotal should be at least %s";
+                break;
+        }
+        $formattedLimit = Mage::helper('core')->currency($limit, true, false);
+
+        Mage::getSingleton('checkout/session')->addError(sprintf($message, $formattedLimit));
     }
 
     public function checkoutCoupon(Varien_Event_Observer $observer)
@@ -119,7 +133,7 @@ class Giftd_Cards_Model_Observer
         if($_REQUEST['remove'] == 1)
             return;
 
-        $coupon_code = $_REQUEST['coupon_code'];
+        $coupon_code = trim($_REQUEST['coupon_code']);
         $subTotal = Mage::helper('checkout/cart')->getQuote()->getSubtotal();
 
         $existedCoupon = Mage::getModel('salesrule/coupon')->load($coupon_code, 'code');
@@ -131,7 +145,7 @@ class Giftd_Cards_Model_Observer
                 if($card = self::getGiftdCard($coupon_code))
                 {
                     if($card->min_amount_total > $subTotal)
-                        $this->showMinimumSubtotlaError($card->min_amount_total);
+                        $this->showMinimumSubtotalError($card->min_amount_total);
                 }
             }
             return;
@@ -144,17 +158,18 @@ class Giftd_Cards_Model_Observer
                 $coupon_value = $card->amount_available;
                 if ($card->min_amount_total > $subTotal)
                 {
-                    $this->showMinimumSubtotlaError($card->min_amount_total);
+                    $this->showMinimumSubtotalError($card->min_amount_total);
                 }
-                self::generateRule("Giftd card ".$card->card_title.' ('.$card->owner_name.')', $coupon_code, $coupon_value, $card->min_amount_total);
+                self::generateRule("Giftd card", $coupon_code, $coupon_value, $card->min_amount_total);
             }
         }
     }
 
     public function getGiftdCard($the_coupon_code)
     {
-        $prefix = Mage::getStoreConfig('giftd_cards/api_settings/partner_token_prefix',Mage::app()->getStore());
-        if($this->client && strlen($the_coupon_code) > 0 && strpos($the_coupon_code, $prefix) === 0)
+        $the_coupon_code = trim($the_coupon_code);
+        $prefix = trim(Mage::getStoreConfig('giftd_cards/api_settings/partner_token_prefix',Mage::app()->getStore()));
+        if($this->client && strlen($the_coupon_code) > 0 && (!$prefix || strpos($the_coupon_code, $prefix) === 0))
         {
             $card = $this->client->checkByToken($the_coupon_code);
             if($card && $card->token_status == Giftd_Card::TOKEN_STATUS_OK)
