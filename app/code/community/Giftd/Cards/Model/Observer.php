@@ -4,6 +4,9 @@ require_once('GiftdClient.php');
 
 class Giftd_Cards_Model_Observer
 {
+    /**
+     * @var GiftdClient $client
+     */
     protected $client = false;
 
     public function init($force=false)
@@ -39,13 +42,17 @@ class Giftd_Cards_Model_Observer
         $userId = Mage::getSingleton('admin/session')->getUser()->getId();
         $user = Mage::getModel('admin/user')->load($userId);
 
-        return array(
+        $name = trim($user->getData('firstname').' '.$user->getData('lastname'));
+
+        $result = array(
             'email' => $user->getData('email'),
-            'phone' => null,
-            'name' => $user->getData('firstname').' '.$user->getData('lastname'),
             'url' => $url,
-            'title' => null
+            'magento_version' => Mage::getVersion()
         );
+        if ($name) {
+            $result['name'] = $name;
+        }
+        return $result;
     }
 
     public  function updateApiKey(Varien_Event_Observer $observer)
@@ -55,25 +62,13 @@ class Giftd_Cards_Model_Observer
         {
             $config = new Mage_Core_Model_Config();
 
-            $sentOnInstall = Mage::getStoreConfig('giftd_cards/api_settings/sent_on_install',Mage::app()->getStore());
-            if(!$sentOnInstall)
-            {
-                try {
-                    $this->client->query('magento/install', $this->getStoreInfo());
-                    $config->saveConfig('giftd_cards/api_settings/sent_on_install', 1, 'default', 0);
-                    Mage::log('data sent');
-                } catch (Exception $e) {
-                    Mage::logException($e);
-                }
-            }
+            $this->client->query('magento/install', $this->getStoreInfo());
+            Mage::log('Sent store data to Giftd');
 
             $response = $this->client->query('partner/get');
-            if($response['type'] == 'data')
-            {
-
+            if($response['type'] == 'data') {
                 $config->saveConfig('giftd_cards/api_settings/partner_token', $response['data']['code'], 'default', 0);
                 $config->saveConfig('giftd_cards/api_settings/partner_token_prefix', $response['data']['token_prefix'], 'default', 0);
-
             }
         }
     }
