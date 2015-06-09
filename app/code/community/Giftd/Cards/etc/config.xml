@@ -53,6 +53,15 @@
                     </giftd_cards>
                 </observers>
             </controller_action_predispatch_checkout_cart_couponPost>
+            <controller_action_predispatch_onepagecheckout_index_updateCheckout>
+                <observers>
+                    <giftd_cards>
+                        <class>giftd_cards/observer</class>
+                        <method>processCoupon</method>
+                        <type>singleton</type>
+                    </giftd_cards>
+                </observers>
+            </controller_action_predispatch_onepagecheckout_index_updateCheckout>
             <sales_order_place_after>
                 <observers>
                     <giftd_cards>
@@ -62,6 +71,7 @@
                     </giftd_cards>
                 </observers>
             </sales_order_place_after>
+
         </events>
     </global>
 

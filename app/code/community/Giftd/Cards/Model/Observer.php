@@ -125,10 +125,24 @@ class Giftd_Cards_Model_Observer
 
     public function processCoupon(Varien_Event_Observer $observer)
     {
-        if($_REQUEST['remove'] == 1)
+        if ((isset($_REQUEST['remove']) && ($_REQUEST['remove'])) ||
+            (isset($_REQUEST['coupon']['remove']) && $_REQUEST['coupon']['remove'])) {
             return;
+        }
 
-        $coupon_code = trim($_REQUEST['coupon_code']);
+
+        if (isset($_REQUEST['coupon_code'])) {
+            $coupon_code = trim($_REQUEST['coupon_code']);
+        } elseif (isset($_REQUEST['coupon[code]'])) {
+            $coupon_code = trim($_REQUEST['coupon[code]']);
+        } elseif (isset($_REQUEST['coupon']['code'])) {
+            $coupon_code = trim($_REQUEST['coupon']['code']);
+        }
+
+        if (!$coupon_code) {
+            return;
+        }
+
         $subTotal = Mage::helper('checkout/cart')->getQuote()->getSubtotal();
 
         $existedCoupon = Mage::getModel('salesrule/coupon')->load($coupon_code, 'code');
@@ -157,6 +171,8 @@ class Giftd_Cards_Model_Observer
                 }
                 self::generateRule("Giftd card", $coupon_code, $coupon_value, $card->min_amount_total);
             }
+
+
         }
     }
 
@@ -180,13 +196,20 @@ class Giftd_Cards_Model_Observer
     {
         if ($name != null && $coupon_code != null)
         {
+            /**
+             * @var $collection Mage_Customer_Model_Resource_Group_Collection
+             */
+            $collection = Mage::getResourceModel('customer/group_collection');
+            $customerGroupIds = $collection->getAllIds();
+            $websiteIds =  array_keys(Mage::app()->getWebsites());
+
             $data = array(
               'product_ids' => null,
               'name' => $name,
               'description' => null,
               'is_active' => 1,
-              'website_ids' => array(1),
-              'customer_group_ids' => array(0,1,2,4,5),
+              'website_ids' => $websiteIds,
+              'customer_group_ids' => $customerGroupIds,
               'coupon_type' => 2,
               'coupon_code' => $coupon_code,
               'uses_per_coupon' => 1,
@@ -221,7 +244,6 @@ class Giftd_Cards_Model_Observer
 
             $model = Mage::getModel('salesrule/rule');
             $validateResult = $model->validateData(new Varien_Object($data));
-
             if ($validateResult == true)
             {
                 try {
