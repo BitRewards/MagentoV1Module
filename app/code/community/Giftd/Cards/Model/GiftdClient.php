@@ -20,7 +20,7 @@ class GiftdClient
     {
         $this->userId = $userId;
         $this->apiKey = $apiKey;
-        $this->baseUrl = (defined('DEBUG') && DEBUG) ? "https://api.giftd.local/v1/" : "https://api.giftd.ru/v1/";
+        $this->baseUrl = (defined('DEBUG') && DEBUG) ? "https://api.giftd.local/v1/" : "http://api.giftd.ru/v1/";
     }
 
     private function httpPost($url, array $params)
