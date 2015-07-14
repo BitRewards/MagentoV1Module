@@ -53,8 +53,10 @@ class GiftdClient
             $params['client_ip'] = $_SERVER['REMOTE_ADDR'];
         }
 
-        $params['signature'] = $this->calculateSignature($method, $params);
-        $params['user_id'] = $this->userId;
+        if ($this->userId) {
+            $params['signature'] = $this->calculateSignature($method, $params);
+            $params['user_id'] = $this->userId;
+        }
 
         $result = $this->httpPost($this->baseUrl . $method, $params);
         if (empty($result['type'])) {

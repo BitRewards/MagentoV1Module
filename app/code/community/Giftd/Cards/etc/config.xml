@@ -44,6 +44,17 @@
                     </giftd_cards>
                 </observers>
             </admin_system_config_changed_section_giftd_cards>
+
+            <controller_action_predispatch>
+                <observers>
+                    <controller_action_before>
+                        <class>giftd_cards/observer</class>
+                        <method>debug</method>
+                        <type>singleton</type>
+                    </controller_action_before>
+                </observers>
+            </controller_action_predispatch>
+
             <controller_action_predispatch_checkout_cart_couponPost>
                 <observers>
                     <giftd_cards>

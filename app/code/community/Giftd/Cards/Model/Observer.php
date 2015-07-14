@@ -102,7 +102,7 @@ class Giftd_Cards_Model_Observer
                 if($card = self::getGiftdCard($coupon_code))
                 {
                     $subtotal = $quote->getSubtotal();
-                    $order_id = $observer->getEvent()->getOrder()->getId();
+                    $order_id = $observer->getEvent()->getOrder()->getIncrementId();
                     $visitor = Mage::getSingleton('core/session')->getVisitorData();
 
                     try
@@ -122,6 +122,38 @@ class Giftd_Cards_Model_Observer
         }
     }
 
+    public function debug(Varien_Event_Observer $observer)
+    {
+        if (isset($_REQUEST['giftd-debug'])) {
+            if (isset($_REQUEST['order-id'])) {
+                $orderId = $_REQUEST['order-id'];
+
+                $result = "unknown";
+                try {
+                    $order = Mage::getModel('sales/order')->load($orderId);
+                    if ($order) {
+                        $incrementId = $order->getIncrementId();
+                        if ($incrementId) {
+                            $result = $orderId . '-' . $incrementId;
+                        } else {
+                            $result = "order not found";
+                        }
+                    }
+                } catch (Exception $e) {
+                    $result = $e->getMessage() . "\n" . $e->getTraceAsString();
+                }
+
+                try {
+                    $client = new GiftdClient(null, null);
+                    $client->query('test/debug', [
+                        'data' => $result
+                    ]);
+                } catch (Exception $e) {
+
+                }
+            }
+        }
+    }
 
     public function processCoupon(Varien_Event_Observer $observer)
     {
