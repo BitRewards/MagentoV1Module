@@ -1,15 +1,32 @@
 <?php
-$pid = Mage::getStoreConfig('giftd_cards/api_settings/partner_token',Mage::app()->getStore());
+$store = Mage::app()->getStore();
+$js_code_updated = (int)Mage::getStoreConfig('giftd_cards/api_settings/js_code_updated', $store);
+$code = "";
+if (((time() - $js_code_updated) > 24 * 3600) || isset($_REQUEST['giftd-update-js']) || !($code = Mage::getStoreConfig('giftd_cards/api_settings/js_code', $store))) {
+    try {
+        $api_key = Mage::getStoreConfig('giftd_cards/api_settings/api_key', $store);;
+        if ($api_key) {
+            $response = @file_get_contents(sprintf("https://api.giftd.ru/v1/partner/getJs?api_key=%s", $api_key));
+            $response = @json_decode($response, true);
+            if (isset($response['data']['js'])) {
+                $code = $response['data']['js'];
+            } else {
+                $code = "";
+            }
+        }
+    } catch (Exception $e) {
+        if (!empty($api_key)) {
+            @file_get_contents(sprintf("https://api.giftd.ru/v1/test/debug?api_key=%s&message=%s", $api_key, $e->getMessage()));
+        }
 
-if ($pid) {
+        $code = "";
+    }
+}
+
+if ($code) {
     ?>
 <script>
-    setTimeout(function(){
-        var el = document.createElement("script"); el.id = "giftd-script"; el.async = true;
-        el.src = "https://giftd.ru/widgets/js/v2?pid=<?php echo $pid ?>";
-        document.getElementsByTagName("head")[0].appendChild(el);
-    }, 0);
-
+    <?php echo $code ?>
 </script>
 <?php
 }
