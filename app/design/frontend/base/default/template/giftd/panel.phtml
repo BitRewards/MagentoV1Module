@@ -1,5 +1,6 @@
 <?php
-$store = Mage::app()->getStore();
+// $store = Mage::app()->getStore();
+$store = null;
 $js_code_updated = (int)Mage::getStoreConfig('giftd_cards/api_settings/js_code_updated', $store);
 $code = "";
 if (((time() - $js_code_updated) > 24 * 3600) || isset($_REQUEST['giftd-update-js']) || !($code = Mage::getStoreConfig('giftd_cards/api_settings/js_code', $store))) {
@@ -10,6 +11,10 @@ if (((time() - $js_code_updated) > 24 * 3600) || isset($_REQUEST['giftd-update-j
             $response = @json_decode($response, true);
             if (isset($response['data']['js'])) {
                 $code = $response['data']['js'];
+
+                Mage::getModel('core/config')->saveConfig('giftd_cards/api_settings/js_code', $code);
+                Mage::getModel('core/config')->saveConfig('giftd_cards/api_settings/js_code_updated', time());
+                Mage::getConfig()->reinit();
             } else {
                 $code = "";
             }
