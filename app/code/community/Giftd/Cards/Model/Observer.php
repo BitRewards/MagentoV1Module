@@ -1,6 +1,6 @@
 <?php
 
-require_once('GiftdClient.php');
+require_once(__DIR__ . '/GiftdClient.php');
 
 class Giftd_Cards_Model_Observer
 {
